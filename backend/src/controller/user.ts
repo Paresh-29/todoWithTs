@@ -30,9 +30,10 @@ interface body {
 
 
 const signupUser = async(req: Request, res: Response) => {
-    const body: body = req.body;
+    const body: body = req.body; //extracting request body
     console.log(body);
 
+    //validating signup data using Zod schema
     const { success } = signupSchema.safeParse(body); //zod always return an object which contain success and data so we can used {success} to direct catch "true or false".
     //checking that data is safely parsed or not
     if(!success) {
@@ -40,7 +41,7 @@ const signupUser = async(req: Request, res: Response) => {
             message: "Email already registered / incorrect input"
         })
     }
-    //checking user exsistence
+    //checking if user already exists in database 
     const userExists = await prisma.user.findFirst({
         where: {
             username: req.body.username
@@ -52,7 +53,7 @@ const signupUser = async(req: Request, res: Response) => {
             message: "Email already registered / incorrect input"
         })
     }
-    //creating and storing user in data base
+    //creating and storing user in database
     const createUser = await prisma.user.create({
         data: {
             username: body.username!,
@@ -62,8 +63,8 @@ const signupUser = async(req: Request, res: Response) => {
         }
     })
 
+    //Generating JWT token for user
     const userId = createUser.id;
-
     const token = Jwt.sign(
         {
             userId
@@ -71,6 +72,7 @@ const signupUser = async(req: Request, res: Response) => {
         SECRET_KEY
     )
 
+    //Returning success response with token
     return res.status(statusCode.OK).json({
         message: "User created successfully",
         token: token
@@ -79,21 +81,26 @@ const signupUser = async(req: Request, res: Response) => {
 
 
 const signinUser = async(req: Request, res: Response) => {
-    const body: body = req.body;
+    const body: body = req.body; // extracting request body
 
+    //validating signin data using Zod schema
     const { success } = signinSchema.safeParse(body);
+    //checking that data is safely parsed or not
     if(!success) {
         return res.json({
             message: "Incorrect input"
         })
     }
 
+    //checking if user exists in database
     const userExists = await prisma.user.findFirst({
         where: {
             username: req.body.username
         }
     })
 
+
+    //Generating JWT token for user
     const token = Jwt.sign(
         {
             userId: userExists!.id
@@ -101,6 +108,7 @@ const signinUser = async(req: Request, res: Response) => {
         SECRET_KEY
     )
 
+    // Returning success response with token
     return res.status(statusCode.OK).json({
         message: "User signed in successfully",
         token: token
@@ -120,7 +128,9 @@ const signinUser = async(req: Request, res: Response) => {
         })
     }
 
+    // Extracting userId from request
     const userId: number = req.userId!;
+    // Updating user data in the database
     await prisma.user.update({
         where: {
             id: userId
@@ -137,15 +147,9 @@ const signinUser = async(req: Request, res: Response) => {
     })
 }
 
-    // interface userData {
-    //     id: number,
-    //     username: string,
-    //     firstName: string,
-    //     lastName: string,
-    //     password: string
-    // }
 
     const getUserData = async (req: RequestWithUserId, res: Response) => {
+         // Retrieving user data from the database
         const userData = await prisma.user.findFirst({
             where: {
                 id: req.userId!
