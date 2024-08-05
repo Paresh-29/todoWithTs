@@ -1,5 +1,6 @@
 import  express  from "express";
 import dotenv from "dotenv";
+import cors from 'cors';
 
 const app = express();
 
@@ -11,6 +12,7 @@ const port: any = process.env.PORT || 3000;
 
 //middleware
 app.use(express.json());
+app.use(cors());
 
 
 app.use('/api/v1', rootRouter);
